@@ -9,7 +9,7 @@ export default function BlogPage() {
     <main className="container mx-auto grow px-4 py-8">
       <div className="flex flex-row items-center gap-x-2">
         <FixFXIcon className="size-10" stroke="#8b5cf6" />
-        <h1 className="text-4xl font-bold">Rehooks Blog</h1>
+        <h1 className="text-4xl font-bold">FixFX Blog</h1>
       </div>
       <hr className="border-t-fd-border my-6 border-t" />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
