@@ -1,5 +1,5 @@
 import defaultMdxComponents from "fumadocs-ui/mdx";
-import { CornerDownLeft } from "@rehooks/ui/icons";
+import { CornerDownLeft } from "@ui/icons";
 import { notFound } from "next/navigation";
 import { blog } from "@/lib/docs/source";
 import Link from "next/link";
