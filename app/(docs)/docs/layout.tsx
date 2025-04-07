@@ -13,8 +13,8 @@ const docsOptions: DocsLayoutProps = {
       type: "custom",
       children: (
          <GithubInfo 
-            owner="TheRealToxicDev"
-            repo="FixFX"
+            owner="FixFXOSS"
+            repo="Website"
          />
       )
     }

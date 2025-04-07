@@ -19,11 +19,7 @@ export async function Contributors() {
   let contributors: Contributor[] = [];
 
   try {
-    const response = await fetch(`${ENV_URL}/api/contributors`, {
-      next: {
-        revalidate: 3600, // Cache for 1 hour
-      },
-    });
+    const response = await fetch(`${ENV_URL}/api/contributors`);
 
     if (response.ok) {
       contributors = await response.json();
