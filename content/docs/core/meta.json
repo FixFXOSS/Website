@@ -1,0 +1,13 @@
+{
+  "root": true,
+  "pages": [
+    "index",
+    "faq",
+    "disclaimer",
+    "glossary",
+    "---Basics---",
+    "basics",
+    "---Community---",
+    "oss"
+  ]
+}
