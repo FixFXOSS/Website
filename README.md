@@ -1,5 +1,7 @@
 # FixFX Wiki
 
+[![Build](https://github.com/FixFXOSS/Website/actions/workflows/build-ci.yml/badge.svg)](https://github.com/FixFXOSS/Website/actions/workflows/build-ci.yml)
+
 A comprehensive documentation platform for FiveM development, providing detailed guides, tutorials, and best practices for the FiveM community.
 
 ## Features
