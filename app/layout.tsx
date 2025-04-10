@@ -3,6 +3,7 @@ import { RootProvider } from "fumadocs-ui/provider";
 import { Analytics } from "@vercel/analytics/react";
 import { inter, jetbrains } from "@/lib/fonts";
 import { keywords } from "@utils/index";
+import '@/styles/sheet-handle.css';
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import "@ui/styles";
@@ -86,8 +87,11 @@ export default function Layout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="dark:selection:text-fd-foreground antialiased [text-rendering:optimizeLegibility] selection:bg-neutral-800 selection:text-white dark:selection:bg-neutral-800">
-        <Banner variant="rainbow" id="hello-world">Hello World</Banner>
-        <RootProvider>{children}</RootProvider>
+        <RootProvider
+          theme="dark"
+        >
+          {children}
+        </RootProvider>
         <Analytics />
       </body>
     </html>

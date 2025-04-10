@@ -18,6 +18,7 @@ import {
   CornerDownLeft,
   Sparkles,
   Hammer,
+  Download,
 } from "lucide-react";
 
 export {
@@ -40,6 +41,7 @@ export {
   CornerDownLeft,
   Sparkles,
   Hammer,
+  Download,
 };
 export * from "./sparkle";
 export * from "./fixfx";

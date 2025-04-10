@@ -30,6 +30,7 @@ const confg: Pick<Config, "presets" | "plugins" | "content" | "theme"> = {
         },
       },
       animation: {
+        shimmer: "shimmer 2s infinite linear",
         grid: "grid 15s linear infinite",
         marquee: "marquee var(--duration) linear infinite",
         "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
@@ -59,6 +60,10 @@ const confg: Pick<Config, "presets" | "plugins" | "content" | "theme"> = {
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
+        },
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" }
         },
         gradient: {
           to: { "background-position": "200% center" },

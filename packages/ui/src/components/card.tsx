@@ -1,125 +1,85 @@
-import type { ComponentPropsWithoutRef } from "react";
-import { highlight } from "sugar-high";
-import { cn } from "@utils/index";
-import { forwardRef } from "react";
+"use client";
 
-const Card = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div
-      className={cn(
-        "bg-fd-card text-fd-foreground border-fd-border rounded-2xl border",
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  ),
-);
+import * as React from "react";
+import { cn } from "@utils/functions/cn";
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    border?: "default" | "accent" | "destructive" | "none";
+  }
+>(({ className, border = "default", ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg bg-card text-card-foreground shadow-sm",
+      border === "default" && "border border-border/40",
+      border === "accent" && "border border-primary/20",
+      border === "destructive" && "border border-destructive/20",
+      className
+    )}
+    {...props}
+  />
+));
 Card.displayName = "Card";
 
-const CardHeader = forwardRef<
+const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
-    className={cn("border-b-fd-border flex flex-col border-b-2 p-4", className)}
     ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
     {...props}
   />
 ));
 CardHeader.displayName = "CardHeader";
 
-const CardLabel = forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    className={cn(
-      "text-fd-muted-foreground select-none text-sm font-normal",
-      className,
-    )}
-    ref={ref}
-    {...props}
-  />
-));
-CardLabel.displayName = "CardLabel";
-
-const CardTitle = forwardRef<
-  HTMLHeadingElement,
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h2
-    className={cn(
-      "text-fd-foreground select-none text-lg font-bold leading-none",
-      className,
-    )}
+  <h3
     ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
     {...props}
   />
 ));
 CardTitle.displayName = "CardTitle";
 
-const CardContent = forwardRef<
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
-    className={cn("relative text-pretty rounded-md p-4 text-sm", className)}
     ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
     {...props}
   />
 ));
-CardContent.displayName = "CardContent";
+CardFooter.displayName = "CardFooter";
 
-interface CodeBlockProps {
-  children: string;
-  cls?: string;
-  sign?: string;
-  string?: string;
-  keyword?: string;
-  comment?: string;
-  identifier?: string;
-  jsxliterals?: string;
-  property?: string;
-  entity?: string;
-}
-
-function CodeBlock({
-  children,
-  cls = "#3b82f6",
-  sign = "#a0a0a0",
-  string = "#60a5fa",
-  keyword = "#64b5f6",
-  comment = "#a0a0a0",
-  identifier = "#1e88e5",
-  jsxliterals = "#60a5fa",
-  property = "#90caf9",
-  entity = "#3b82f6",
-  ...props
-}: CodeBlockProps & ComponentPropsWithoutRef<"code">) {
-  const codeHTML = highlight(children as string);
-  return (
-    <pre>
-      <code
-        className={cn("font-mono text-sm")}
-        dangerouslySetInnerHTML={{ __html: codeHTML }}
-        style={
-          {
-            "--sh-class": cls,
-            "--sh-sign": sign,
-            "--sh-string": string,
-            "--sh-keyword": keyword,
-            "--sh-comment": comment,
-            "--sh-identifier": identifier,
-            "--sh-jsxliterals": jsxliterals,
-            "--sh-property": property,
-            "--sh-entity": entity,
-          } as React.CSSProperties
-        }
-        {...props}
-      />
-    </pre>
-  );
-}
-
-export { Card, CardHeader, CardTitle, CardLabel, CardContent, CodeBlock };
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
