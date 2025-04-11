@@ -87,9 +87,7 @@ export default function Layout({
   return (
     <html lang="en" className={`${inter.variable} ${jetbrains.variable}`}>
       <body className="dark:selection:text-fd-foreground antialiased [text-rendering:optimizeLegibility] selection:bg-neutral-800 selection:text-white dark:selection:bg-neutral-800">
-        <RootProvider
-          theme="dark"
-        >
+        <RootProvider theme="dark">
           {children}
         </RootProvider>
         <Analytics />

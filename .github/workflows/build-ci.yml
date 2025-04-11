@@ -16,10 +16,10 @@ jobs:
           node-version: 20.18.0
       
       - name: Install dependencies
-        run: npm install
+        run: bun install
       
       - name: Build application
-        run: npm run build
+        run: bun run build
       
       - name: Notify success
         run: echo "Build completed successfully!"

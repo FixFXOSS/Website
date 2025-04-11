@@ -8,17 +8,6 @@ import type { ReactNode } from "react";
 const docsOptions: DocsLayoutProps = {
   ...baseOptions,
   tree: source.pageTree,
-  links: [
-    {
-      type: "custom",
-      children: (
-         <GithubInfo 
-            owner="FixFXOSS"
-            repo="Website"
-         />
-      )
-    }
-  ],
   sidebar: {
     tabs: [
       {

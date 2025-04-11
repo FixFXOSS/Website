@@ -18,6 +18,7 @@ export const baseOptions: HomeLayoutProps = {
   links: [
     {
       type: "icon",
+      text: "",
       icon: <FaDiscord className="size-6" />,
       url: "https://discord.gg/saK4hyXxMN",
     },

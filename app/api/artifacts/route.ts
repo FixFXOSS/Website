@@ -9,7 +9,7 @@ interface ArtifactVersion {
   critical: boolean;
   download_url_zip: string;
   download_url_7z: string;
-  changelog_url: string;
+  artifact_url: string;
   published_at: string;
   eol?: boolean;           // End of life flag
   supportStatus?: string;  // Support status (active, deprecated, eol)
@@ -291,7 +291,7 @@ function parseHtmlArtifacts(html: string, platform: 'windows' | 'linux'): Artifa
           critical: isCritical,
           download_url_zip: `${artifactUrl}/${zipFile}`,
           download_url_7z: `${artifactUrl}/${sevenZipFile}`,
-          changelog_url: artifactUrl, // Direct link to artifact directory without file extension
+          artifact_url: artifactUrl,
           published_at
         };
 
@@ -335,7 +335,7 @@ function parseHtmlArtifacts(html: string, platform: 'windows' | 'linux'): Artifa
             critical: false,
             download_url_zip: `${artifactUrl}/${zipFile}`,
             download_url_7z: `${artifactUrl}/${sevenZipFile}`,
-            changelog_url: artifactUrl,
+            artifact_url: artifactUrl,
             published_at
           };
 
@@ -405,7 +405,7 @@ export async function GET(request: NextRequest) {
           critical: false,
           download_url_zip: `${winArtifactUrl}/server.zip`,
           download_url_7z: `${winArtifactUrl}/server.7z`,
-          changelog_url: winArtifactUrl,
+          artifact_url: winArtifactUrl,
           published_at: new Date().toISOString()
         };
 
@@ -415,7 +415,7 @@ export async function GET(request: NextRequest) {
           critical: false,
           download_url_zip: `${linuxArtifactUrl}/fx.tar.xz`,
           download_url_7z: `${linuxArtifactUrl}/fx.tar.xz`,
-          changelog_url: linuxArtifactUrl,
+          artifact_url: linuxArtifactUrl,
           published_at: new Date().toISOString()
         };
       });
@@ -453,7 +453,7 @@ export async function GET(request: NextRequest) {
             zip: artifact.download_url_zip,
             '7z': artifact.download_url_7z
           },
-          changelog_url: artifact.changelog_url,
+          artifact_url: artifact.artifact_url,
           published_at: artifact.published_at,
           eol: artifact.eol || false,
           supportStatus: artifact.supportStatus || 'unknown',
@@ -604,7 +604,7 @@ export async function GET(request: NextRequest) {
             zip: artifact.download_url_zip,
             '7z': artifact.download_url_7z
           },
-          changelog_url: artifact.changelog_url,
+          artifact_url: artifact.artifact_url,
           published_at: artifact.published_at,
           eol: artifact.eol || false,
           supportStatus: artifact.supportStatus || 'unknown',
@@ -638,7 +638,7 @@ export async function GET(request: NextRequest) {
               zip: artifact.download_url_zip,
               '7z': artifact.download_url_7z
             },
-            changelog_url: artifact.changelog_url,
+            artifact_url: artifact.artifact_url,
             published_at: artifact.published_at,
             eol: artifact.eol || false,
             supportStatus: artifact.supportStatus || 'unknown',
@@ -658,7 +658,7 @@ export async function GET(request: NextRequest) {
                   zip: artifact.download_url_zip,
                   '7z': artifact.download_url_7z
                 },
-                changelog_url: artifact.changelog_url,
+                artifact_url: artifact.artifact_url,
                 published_at: artifact.published_at,
                 eol: false,
                 supportStatus: 'recommended', // Override to recommended
