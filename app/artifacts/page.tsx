@@ -7,6 +7,8 @@ import { MobileArtifactsHeader } from '@/components/artifacts/mobile-artifacts-h
 import { ArtifactsDrawer } from '@/components/artifacts/artifacts-drawer';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+type SupportStatus = "recommended" | "latest" | "active" | "deprecated" | "eol" | undefined;
+
 export default function ArtifactsPage() {
   // Get query params for initial state
   const searchParams = useSearchParams();
@@ -14,7 +16,7 @@ export default function ArtifactsPage() {
   const initialSearch = searchParams.get('search') || '';
   const initialSortBy = (searchParams.get('sortBy') as 'version' | 'date') || 'version';
   const initialSortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
-  const initialStatus = searchParams.get('status') || undefined;
+  const initialStatus = (searchParams.get('status') as SupportStatus) || undefined;
   const initialIncludeEol = searchParams.get('includeEol') === 'true';
 
   // Set state with initial values from URL
@@ -22,7 +24,7 @@ export default function ArtifactsPage() {
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [sortBy, setSortBy] = useState<'version' | 'date'>(initialSortBy);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSortOrder);
-  const [status, setStatus] = useState<string | undefined>(initialStatus);
+  const [status, setStatus] = useState<SupportStatus>(initialStatus);
   const [includeEol, setIncludeEol] = useState(initialIncludeEol);
   const [artifactsDrawerOpen, setArtifactsDrawerOpen] = useState(false);
 
@@ -62,7 +64,7 @@ export default function ArtifactsPage() {
       <div className="hidden md:flex w-full h-full">
         <ArtifactsSidebar
           platform={platform}
-          onPlatformChange={handlePlatformChange}
+          onPlatformChange={setPlatform}
         />
         <main className="flex-1 h-full flex flex-col">
           <ArtifactsContent

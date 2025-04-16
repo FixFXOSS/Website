@@ -110,7 +110,7 @@ export const baseOptions: HomeLayoutProps = {
           icon: <Bot className="size-6" stroke="#2365eb" />,
           text: "Chat with Fixie",
           description: "Fixie is a powerful AI assistant that can help you with all your CFX needs.",
-          url: "/ask"
+          url: "/chat"
         },
         {
           menu: {

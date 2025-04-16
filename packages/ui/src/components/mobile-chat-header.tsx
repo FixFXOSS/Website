@@ -17,7 +17,7 @@ export function MobileChatHeader({
     temperature
 }: MobileChatHeaderProps) {
     return (
-        <div className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between p-4 border-b bg-fd-background/95 backdrop-blur-md border-[#5865F2]/20 z-[100]">
+        <div className="fixed top-0 left-0 right-0 h-16 flex items-center justify-between p-4 border-b bg-fd-background/95 backdrop-blur-md border-[#5865F2]/20 z-[100] mb-16">
             <div className="flex items-center gap-2">
                 <Button
                     variant="ghost"

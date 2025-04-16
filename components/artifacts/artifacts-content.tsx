@@ -1,288 +1,258 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useState, useRef } from "react"
-import { ScrollArea } from "@ui/components/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/components/tabs"
-import { Badge } from "@ui/components/badge"
-import { Button } from "@ui/components/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@ui/components/card"
-import { Alert, AlertDescription, AlertTitle } from "@ui/components/alert"
-import { AlertCircle, ChevronDown, ChevronRight, ChevronUp, ChevronLeft, Copy, Download, ExternalLink, Filter, Search, Server, ServerCrash, X } from "lucide-react"
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@ui/components/sheet"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@ui/components/dropdown-menu"
-import { Progress } from "@ui/components/progress"
-import { Input } from "@ui/components/input"
-import { Separator } from "@ui/components/separator"
-import { formatDistanceToNow } from "date-fns"
-import { cn } from "@utils/functions/cn"
+import { useCallback, useEffect, useState, useRef } from "react";
+import { ScrollArea } from "@ui/components/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/components/tabs";
+import { Badge } from "@ui/components/badge";
+import { Button } from "@ui/components/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@ui/components/card";
+import { Alert, AlertDescription, AlertTitle } from "@ui/components/alert";
+import { AlertCircle, ChevronDown, ChevronRight, ChevronUp, ChevronLeft, Copy, Download, ExternalLink, Filter, Search, Server, ServerCrash, X } from "lucide-react";
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@ui/components/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@ui/components/dropdown-menu";
+import { Progress } from "@ui/components/progress";
+import { Input } from "@ui/components/input";
+import { Separator } from "@ui/components/separator";
+import { formatDistanceToNow } from "date-fns";
+import { cn } from "@utils/functions/cn";
 
 // Types
 interface Artifact {
-    version: string
-    recommended: boolean
-    critical: boolean
+    version: string;
+    recommended: boolean;
+    critical: boolean;
     download_urls: {
-        zip: string
-        "7z": string
-    }
-    changelog_url: string
-    published_at: string
-    eol: boolean
-    supportStatus: "recommended" | "latest" | "active" | "deprecated" | "eol" | "unknown"
-    supportEnds: string
+        zip: string;
+        "7z": string;
+    };
+    artifact_url: string;
+    published_at: string;
+    eol: boolean;
+    supportStatus: "recommended" | "latest" | "active" | "deprecated" | "eol" | "unknown";
+    supportEnds: string;
 }
 
 interface ArtifactsResponse {
     data: {
-        windows?: Record<string, Artifact>
-        linux?: Record<string, Artifact>
-    }
+        windows?: Record<string, Artifact>;
+        linux?: Record<string, Artifact>;
+    };
     metadata: {
-        platforms: string[]
-        recommended: Record<string, Artifact & { version: string }>
-        latest: Record<string, Artifact & { version: string }>
+        platforms: string[];
+        recommended: Record<string, Artifact & { version: string }>;
+        latest: Record<string, Artifact & { version: string }>;
         stats: Record<string, {
-            total: number
-            filtered: number
-            recommended: number
-            latest: number
-            active: number
-            deprecated: number
-            eol: number
-        }>
+            total: number;
+            filtered: number;
+            recommended: number;
+            latest: number;
+            active: number;
+            deprecated: number;
+            eol: number;
+        }>;
         pagination: {
-            limit: number
-            offset: number
-            filtered: number
-            total: number
-            currentPage: number
-            totalPages: number
-        }
+            limit: number;
+            offset: number;
+            filtered: number;
+            total: number;
+            currentPage: number;
+            totalPages: number;
+        };
         filters: {
-            search?: string
-            platform?: string
-            supportStatus?: string
-            includeEol: boolean
-            beforeDate?: string
-            afterDate?: string
-            sortBy: string
-            sortOrder: string
-        }
+            search?: string;
+            platform?: string;
+            supportStatus?: string;
+            includeEol: boolean;
+            beforeDate?: string;
+            afterDate?: string;
+            sortBy: string;
+            sortOrder: string;
+        };
         supportSchedule: {
-            recommended: string
-            latest: string
-            eol: string
-        }
+            recommended: string;
+            latest: string;
+            eol: string;
+        };
         supportStatusExplanation: {
-            recommended: string
-            latest: string
-            active: string
-            deprecated: string
-            eol: string
-            info: string
-        }
-    }
+            recommended: string;
+            latest: string;
+            active: string;
+            deprecated: string;
+            eol: string;
+            info: string;
+        };
+    };
 }
 
 interface ArtifactsContentProps {
-    platform: "windows" | "linux"
-    searchQuery?: string
-    sortBy?: "version" | "date"
-    sortOrder?: "asc" | "desc"
-    status?: "recommended" | "latest" | "active" | "deprecated" | "eol"
-    includeEol?: boolean
+    platform: "windows" | "linux";
+    searchQuery?: string;
+    sortBy?: "version" | "date";
+    sortOrder?: "asc" | "desc";
+    status?: "recommended" | "latest" | "active" | "deprecated" | "eol";
+    includeEol?: boolean;
 }
 
 export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version", sortOrder = "desc", status, includeEol = false }: ArtifactsContentProps) {
-    const [artifacts, setArtifacts] = useState<ArtifactsResponse | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState("")
-    const [search, setSearch] = useState(searchQuery)
-    const [currentPage, setCurrentPage] = useState(1)
-    const [selectedTab, setSelectedTab] = useState<string>(platform)
-    const [isFilterOpen, setIsFilterOpen] = useState(false)
-    const [includeEolState, setIncludeEolState] = useState(includeEol)
-    const [supportStatusFilter, setSupportStatusFilter] = useState<string | undefined>(status)
+    const [artifacts, setArtifacts] = useState<ArtifactsResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [search, setSearch] = useState(searchQuery);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedTab, setSelectedTab] = useState<string>(platform);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [includeEolState, setIncludeEolState] = useState(includeEol);
+    const [supportStatusFilter, setSupportStatusFilter] = useState<string | undefined>(status);
     const [sortingOptions, setSortingOptions] = useState({
         sortBy: sortBy,
         sortOrder: sortOrder
-    })
+    });
 
-    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const fetchArtifacts = useCallback(async (page = 1) => {
         try {
-            setLoading(true)
+            setLoading(true);
+            const limit = 10;
+            const offset = (page - 1) * limit;
 
-            const limit = 10
-            const offset = (page - 1) * limit
+            // Construct query parameters
+            const params = new URLSearchParams();
+            params.set('platform', platform);
+            if (search) params.set('search', search);
+            if (supportStatusFilter) params.set('status', supportStatusFilter);
+            if (includeEolState) params.set('includeEol', 'true');
+            params.set('sortBy', sortingOptions.sortBy);
+            params.set('sortOrder', sortingOptions.sortOrder);
+            params.set('limit', limit.toString());
+            params.set('offset', offset.toString());
 
-            const urlParams = new URLSearchParams()
-            urlParams.set('limit', limit.toString())
-            urlParams.set('offset', offset.toString())
-            urlParams.set('platform', selectedTab)
-
-            if (search) urlParams.set('search', search)
-            if (supportStatusFilter) urlParams.set('status', supportStatusFilter)
-            if (includeEolState) urlParams.set('includeEol', 'true')
-
-            urlParams.set('sortBy', sortingOptions.sortBy)
-            urlParams.set('sortOrder', sortingOptions.sortOrder)
-
-            const response = await fetch(`/api/artifacts?${urlParams.toString()}`)
-
+            console.log("Fetching artifacts with params:", params.toString());
+            const response = await fetch(`/api/artifacts/fetch?${params.toString()}`);
             if (!response.ok) {
-                throw new Error(`Error fetching artifacts: ${response.status}`)
+                throw new Error(`Error fetching artifacts: ${response.status}`);
             }
 
-            const data: ArtifactsResponse = await response.json()
-            setArtifacts(data)
-            setCurrentPage(page)
+            const data = await response.json();
+            console.log("API response:", data);
 
-            // Update URL with current filters without page refresh
-            const url = new URL(window.location.href)
-            url.searchParams.set('platform', selectedTab)
-
-            if (search) url.searchParams.set('search', search)
-            else url.searchParams.delete('search')
-
-            if (supportStatusFilter) url.searchParams.set('status', supportStatusFilter)
-            else url.searchParams.delete('status')
-
-            if (includeEolState) url.searchParams.set('includeEol', 'true')
-            else url.searchParams.delete('includeEol')
-
-            url.searchParams.set('sortBy', sortingOptions.sortBy)
-            url.searchParams.set('sortOrder', sortingOptions.sortOrder)
-
-            window.history.replaceState({}, '', url.toString())
+            // Set the artifacts directly from the API response
+            setArtifacts(data);
+            setCurrentPage(page);
         } catch (err) {
-            console.error("Error fetching artifacts:", err)
-            setError("Failed to load artifacts. Please try again.")
+            console.error("Error fetching artifacts:", err);
+            setError("Failed to load artifacts. Please try again.");
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }, [selectedTab, search, includeEolState, supportStatusFilter, sortingOptions])
+    }, [platform, search, supportStatusFilter, includeEolState, sortingOptions]);
 
-    // Add a new clearAllFilters function to reset all filters
     const clearAllFilters = useCallback(() => {
-        setSearch("")
-        setSupportStatusFilter(undefined)
-        setIncludeEolState(false)
-        setSortingOptions({ sortBy: "version", sortOrder: "desc" })
-    }, [])
+        setSearch("");
+        setSupportStatusFilter(undefined);
+        setIncludeEolState(false);
+        setSortingOptions({ sortBy: "version", sortOrder: "desc" });
+    }, []);
 
-    // Initial fetch
     useEffect(() => {
-        setSelectedTab(platform)
-        fetchArtifacts(1)
-    }, [platform, fetchArtifacts])
+        setSelectedTab(platform);
+        fetchArtifacts(1);
+    }, [platform, fetchArtifacts]);
 
-    // Handle debounced search
     useEffect(() => {
         if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current)
+            clearTimeout(searchTimeoutRef.current);
         }
 
         searchTimeoutRef.current = setTimeout(() => {
-            fetchArtifacts(1)
-        }, 300)
+            fetchArtifacts(1);
+        }, 300);
 
         return () => {
             if (searchTimeoutRef.current) {
-                clearTimeout(searchTimeoutRef.current)
+                clearTimeout(searchTimeoutRef.current);
             }
-        }
-    }, [search, fetchArtifacts])
+        };
+    }, [search, fetchArtifacts]);
 
-    // Handle filter changes
     useEffect(() => {
-        fetchArtifacts(1)
-    }, [includeEolState, supportStatusFilter, sortingOptions, fetchArtifacts])
+        fetchArtifacts(1);
+    }, [includeEolState, supportStatusFilter, sortingOptions, fetchArtifacts]);
 
-    // Update when sorting options change
     useEffect(() => {
-        fetchArtifacts(1) // Reset to page 1 when sort options change
-    }, [sortingOptions, fetchArtifacts])
+        fetchArtifacts(1);
+    }, [sortingOptions, fetchArtifacts]);
 
-    // Handle tab change
     const handleTabChange = (value: string) => {
-        setSelectedTab(value as "windows" | "linux")
-        setCurrentPage(1)
-    }
+        setSelectedTab(value as "windows" | "linux");
+        setCurrentPage(1);
+    };
 
-    // Handle search input
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearch(e.target.value)
-    }
+        setSearch(e.target.value);
+    };
 
-    // Handle page change
     const handlePageChange = (page: number) => {
-        setCurrentPage(page)
-        fetchArtifacts(page)
-        containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-    }
+        setCurrentPage(page);
+        fetchArtifacts(page);
+        containerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-    // Handle filter changes
     const applyFilters = () => {
-        fetchArtifacts(1)
-        setIsFilterOpen(false)
-    }
+        fetchArtifacts(1);
+        setIsFilterOpen(false);
+    };
 
-    // Get the status color
     const getStatusColor = (status: string): string => {
         switch (status) {
             case 'recommended':
-                return 'bg-green-500/20 text-green-500 border-green-500/50'
+                return 'bg-green-500/20 text-green-500 border-green-500/50';
             case 'latest':
-                return 'bg-blue-500/20 text-blue-500 border-blue-500/50'
+                return 'bg-blue-500/20 text-blue-500 border-blue-500/50';
             case 'active':
-                return 'bg-cyan-500/20 text-cyan-500 border-cyan-500/50'
+                return 'bg-cyan-500/20 text-cyan-500 border-cyan-500/50';
             case 'deprecated':
-                return 'bg-amber-500/20 text-amber-500 border-amber-500/50'
+                return 'bg-amber-500/20 text-amber-500 border-amber-500/50';
             case 'eol':
-                return 'bg-red-500/20 text-red-500 border-red-500/50'
+                return 'bg-red-500/20 text-red-500 border-red-500/50';
             default:
-                return 'bg-gray-500/20 text-gray-500 border-gray-500/50'
+                return 'bg-gray-500/20 text-gray-500 border-gray-500/50';
         }
-    }
+    };
 
     const getStatusBgColor = (status: string): string => {
         switch (status) {
             case 'recommended':
-                return 'bg-gradient-to-r from-green-800/5 to-green-700/10'
+                return 'bg-gradient-to-r from-green-800/5 to-green-700/10';
             case 'latest':
-                return 'bg-gradient-to-r from-blue-800/5 to-blue-700/10'
+                return 'bg-gradient-to-r from-blue-800/5 to-blue-700/10';
             case 'active':
-                return 'bg-gradient-to-r from-cyan-800/5 to-cyan-700/10'
+                return 'bg-gradient-to-r from-cyan-800/5 to-cyan-700/10';
             case 'deprecated':
-                return 'bg-gradient-to-r from-amber-800/5 to-amber-700/10'
+                return 'bg-gradient-to-r from-amber-800/5 to-amber-700/10';
             case 'eol':
-                return 'bg-gradient-to-r from-red-800/5 to-red-700/10'
+                return 'bg-gradient-to-r from-red-800/5 to-red-700/10';
             default:
-                return 'bg-gradient-to-r from-gray-800/5 to-gray-700/10'
+                return 'bg-gradient-to-r from-gray-800/5 to-gray-700/10';
         }
-    }
+    };
 
-    // Format date
     const formatDate = (dateString: string): string => {
         try {
-            return formatDistanceToNow(new Date(dateString), { addSuffix: true })
+            return formatDistanceToNow(new Date(dateString), { addSuffix: true });
         } catch (e) {
-            return "Unknown date"
+            return "Unknown date";
         }
-    }
+    };
 
-    // Handle download
     const handleDownload = (url: string) => {
-        window.open(url, "_blank")
-    }
+        window.open(url, "_blank");
+    };
 
-    // Handle copy version number
     const handleCopyVersion = (version: string) => {
-        navigator.clipboard.writeText(version)
-    }
+        navigator.clipboard.writeText(version);
+    };
 
     return (
         <div className="flex flex-col h-full">
@@ -296,7 +266,6 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                         onChange={handleSearchChange}
                         className={cn("pl-8 bg-fd-background/50", search && "pr-8")}
                     />
-                    {/* Add clear button for mobile search */}
                     {search && (
                         <Button
                             variant="ghost"
@@ -315,7 +284,6 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                         </Button>
                     </SheetTrigger>
                     <SheetContent side="bottom" className="h-[80%] bg-fd-background/80">
-                        {/* Visual indicator for swipe down - enhanced with color and better styling */}
                         <div className="absolute top-0 inset-x-0 flex flex-col items-center">
                             <div className="w-12 h-1 rounded-full bg-[#5865F2]/50 my-2" />
                             <div className="w-full border-b border-[#5865F2]/20" />
@@ -481,7 +449,7 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                 </div>
                             </div>
 
-                            {/* Desktop search and filter - keep this part */}
+                            {/* Desktop search and filter */}
                             <div className="hidden md:flex items-center gap-2">
                                 <div className="relative">
                                     <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -491,7 +459,6 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                         onChange={handleSearchChange}
                                         className={cn("pl-8 w-64 bg-fd-background/50 focus-visible:ring-[#5865F2]", search && "pr-8")}
                                     />
-                                    {/* Add clear button for desktop search */}
                                     {search && (
                                         <Button
                                             variant="ghost"
@@ -512,7 +479,6 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-48 bg-fd-background/95 backdrop-blur-md p-2">
                                         <div className="space-y-3">
-                                            {/* Add Clear All button at top of dropdown */}
                                             <div className="flex justify-between items-center px-1.5 py-1">
                                                 <span className="text-xs text-white font-medium">Filters</span>
                                                 <Button
@@ -634,10 +600,38 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                             <div className="w-full max-w-md space-y-4">
                                                 <Progress value={undefined} className="w-full h-2" />
                                                 <p className="text-center text-sm text-muted-foreground">Loading artifacts...</p>
+                                                <Alert className="mt-4 bg-fd-background/30 border border-[#5865F2]/20">
+                                                    <AlertCircle className="h-4 w-4 text-[#5865F2]" />
+                                                    <AlertTitle className="text-[#5865F2]">Loading Artifacts</AlertTitle>
+                                                    <AlertDescription className="text-sm text-muted-foreground">
+                                                        <div className="space-y-2">
+                                                            <p>We're fetching the latest server artifacts from the CFX Repository. This process involves:</p>
+                                                            <div className="space-y-1.5">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-[#5865F2]/50 animate-pulse" />
+                                                                    <span>Retrieving the latest build information</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-[#5865F2]/50 animate-pulse" />
+                                                                    <span>Calculating support status for each version</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-[#5865F2]/50 animate-pulse" />
+                                                                    <span>Determining recommended and latest builds</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="h-1.5 w-1.5 rounded-full bg-[#5865F2]/50 animate-pulse" />
+                                                                    <span>Applying your selected filters and sorting</span>
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground/80">This may take a few seconds as we ensure you get the most up-to-date information.</p>
+                                                        </div>
+                                                    </AlertDescription>
+                                                </Alert>
                                             </div>
                                         </div>
                                     ) : error ? (
-                                        <Alert variant="destructive" className="mb-6">
+                                        <Alert className="mb-6">
                                             <AlertCircle className="h-4 w-4" />
                                             <AlertTitle>Error</AlertTitle>
                                             <AlertDescription>
@@ -691,7 +685,7 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                                                 asChild
                                                             >
                                                                 <a
-                                                                    href={artifacts.metadata.recommended[platformKey].changelog_url}
+                                                                    href={artifacts.metadata.recommended[platformKey].artifact_url}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="flex items-center"
@@ -755,7 +749,7 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                                                 asChild
                                                             >
                                                                 <a
-                                                                    href={artifacts.metadata.latest[platformKey].changelog_url}
+                                                                    href={artifacts.metadata.latest[platformKey].artifact_url}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="flex items-center"
@@ -939,7 +933,7 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                                                             asChild
                                                                         >
                                                                             <a
-                                                                                href={artifact.changelog_url}
+                                                                                href={artifact.artifact_url}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                                 className="flex items-center"
@@ -950,7 +944,7 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                                                                         </Button>
                                                                     </div>
                                                                     {artifact.eol && (
-                                                                        <Alert variant="destructive" className="m-0 py-2 px-3 h-auto">
+                                                                        <Alert className="m-0 py-2 px-3 h-auto">
                                                                             <AlertCircle className="h-4 w-4" />
                                                                             <AlertDescription className="text-xs">
                                                                                 This artifact is EOL and may not work with the latest server browser.
@@ -1032,5 +1026,5 @@ export function ArtifactsContent({ platform, searchQuery = "", sortBy = "version
                 </Tabs>
             </div>
         </div>
-    )
+    );
 }

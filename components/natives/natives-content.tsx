@@ -126,7 +126,6 @@ export function NativesContent({ game, environment, category, searchQuery, inclu
         const renderMarkdown = (content: string) => {
             return (
                 <ReactMarkdown
-                    className="prose prose-invert max-w-none text-sm"
                     remarkPlugins={[remarkGfm, remarkBreaks]}
                     components={{
                         code({ node, inline, className, children, ...props }) {

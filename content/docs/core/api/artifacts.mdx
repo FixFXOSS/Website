@@ -155,179 +155,388 @@ Retrieves a list of all available artifacts with detailed information about each
 }
 ```
 
-## Support Statuses
+### GET /api/artifacts/changes
 
-Understanding the support status of your server version is crucial for maintaining a stable and secure environment:
+Retrieves changelog information for specified artifact versions by analyzing GitHub commits and issues. This endpoint provides a comprehensive view of changes between versions, including commit diffs and file changes.
 
-- **Recommended**: The most stable version recommended for production use. This version has been thoroughly tested and is considered the best choice for most servers.
-- **Latest**: The most recent release. While it includes the newest features, it may not be as stable as the recommended version.
-- **Active**: Currently supported but not the recommended version. These versions receive security updates but may not get new features.
-- **Deprecated**: No longer actively supported but still available. These versions should be updated as soon as possible.
-- **EOL**: End of Life - no longer supported and should not be used. Using EOL versions may expose your server to security vulnerabilities.
+#### Query Parameters
 
-## Examples
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `from` | string | The starting version to fetch changes from | Required |
+| `to` | string | The ending version to fetch changes to | Required |
+| `platform` | string | Filter changes by platform (windows/linux) | Optional |
+| `format` | string | Response format (`json`, `markdown`, or `html`) | `json` |
+| `includeDiffs` | boolean | Include file diffs in the response | `false` |
 
-Here are examples of how to use the Artifacts API in different programming languages:
+#### Response Format
+
+```json
+{
+  "data": {
+    "commits": [
+      {
+        "sha": "string",
+        "message": "string",
+        "author": {
+          "name": "string",
+          "email": "string",
+          "date": "string"
+        },
+        "url": "string",
+        "stats": {
+          "additions": number,
+          "deletions": number,
+          "total": number
+        }
+      }
+    ],
+    "files": [
+      {
+        "filename": "string",
+        "status": "string",
+        "additions": number,
+        "deletions": number,
+        "changes": number,
+        "blob_url": "string",
+        "raw_url": "string",
+        "patch": "string"
+      }
+    ],
+    "issues": [
+      {
+        "number": number,
+        "title": "string",
+        "url": "string",
+        "state": "string",
+        "labels": ["string"]
+      }
+    ],
+    "metadata": {
+      "from": "string",
+      "to": "string",
+      "platform": "string",
+      "totalCommits": number,
+      "totalFiles": number,
+      "totalIssues": number,
+      "stats": {
+        "additions": number,
+        "deletions": number,
+        "changes": number
+      }
+    }
+  }
+}
+```
+
+#### Example Usage
 
 <Tabs items={['JavaScript', 'Lua', 'C#']}>
 <Tab value="JavaScript">
 
 ```javascript
-// Using fetch with pagination and filtering
-async function getArtifacts() {
-  try {
-    const response = await fetch('https://fixfx.wiki/api/artifacts?platform=windows&status=recommended&limit=10&offset=0');
-    const data = await response.json();
-    
-    // Access pagination info
-    console.log('Current page:', data.metadata.pagination.currentPage);
-    console.log('Total pages:', data.metadata.pagination.totalPages);
-    
-    // Get recommended version
-    const recommended = data.metadata.recommended.windows;
-    console.log('Recommended Windows version:', recommended.version);
-  } catch (error) {
-    console.error('Error fetching artifacts:', error);
-  }
-}
+// Fetch changes between versions with diffs
+const response = await fetch(
+  'https://fixfx.wiki/api/artifacts/changes?from=1234&to=5678&platform=windows&includeDiffs=true'
+);
+const data = await response.json();
 
-// Using axios with advanced filtering
-import axios from 'axios';
+// Process commits with stats
+data.data.commits.forEach(commit => {
+  console.log(`Commit: ${commit.message}`);
+  console.log(`Author: ${commit.author.name}`);
+  console.log(`Date: ${commit.date}`);
+  console.log(`Stats: +${commit.stats.additions} -${commit.stats.deletions}`);
+});
 
-async function searchArtifacts() {
-  try {
-    const response = await axios.get('https://fixfx.wiki/api/artifacts', {
-      params: {
-        platform: 'linux',
-        search: '6683',
-        sortBy: 'date',
-        sortOrder: 'desc',
-        includeEol: true
-      }
-    });
-    
-    console.log('Search results:', response.data.data.linux);
-    console.log('Total artifacts:', response.data.metadata.stats.linux.total);
-  } catch (error) {
-    console.error('Error:', error);
+// Process file changes
+data.data.files.forEach(file => {
+  console.log(`File: ${file.filename}`);
+  console.log(`Status: ${file.status}`);
+  console.log(`Changes: +${file.additions} -${file.deletions}`);
+  if (file.patch) {
+    console.log('Patch:', file.patch);
   }
-}
+});
+
+// Access overall stats
+console.log('Total changes:', data.data.metadata.stats.changes);
+console.log('Total additions:', data.data.metadata.stats.additions);
+console.log('Total deletions:', data.data.metadata.stats.deletions);
 ```
 
 </Tab>
 <Tab value="Lua">
 
 ```lua
--- Using LuaSocket with pagination
-local http = require("socket.http")
-local ltn12 = require("ltn12")
-
-function getArtifacts(page, limit)
-    local response = {}
+-- Fetch changes between versions with diffs
+local function fetchChanges(from, to, platform, includeDiffs)
     local url = string.format(
-        "https://fixfx.wiki/api/artifacts?platform=windows&limit=%d&offset=%d",
-        limit,
-        (page - 1) * limit
+        "https://fixfx.wiki/api/artifacts/changes?from=%s&to=%s&platform=%s&includeDiffs=%s",
+        from, to, platform, tostring(includeDiffs)
     )
     
-    local body, code, headers = http.request{
-        url = url,
-        sink = ltn12.sink.table(response)
-    }
-    
-    if code == 200 then
-        local data = json.decode(table.concat(response))
-        print("Current page:", data.metadata.pagination.currentPage)
-        print("Total pages:", data.metadata.pagination.totalPages)
-        return data.data.windows
-    else
-        print("Error:", code)
-        return nil
-    end
-end
-
--- Using FiveM's native HTTP functions with filtering
-function searchArtifacts(version)
-    PerformHttpRequest(
-        "https://fixfx.wiki/api/artifacts?version=" .. version .. "&platform=linux",
-        function(err, text, headers)
-            if err == 200 then
-                local data = json.decode(text)
-                print("Version status:", data.data.linux[version].supportStatus)
-                print("Support ends:", data.data.linux[version].supportEnds)
-            else
-                print("Error checking version:", err)
+    local response = PerformHttpRequest(url, function(error, resultData, resultCode)
+        if error ~= 200 then
+            print("Error fetching changes:", error)
+            return
+        end
+        
+        local data = json.decode(resultData)
+        
+        -- Process commits with stats
+        for _, commit in ipairs(data.data.commits) do
+            print("Commit:", commit.message)
+            print("Author:", commit.author.name)
+            print("Date:", commit.date)
+            print("Stats: +" .. commit.stats.additions .. " -" .. commit.stats.deletions)
+        end
+        
+        -- Process file changes
+        for _, file in ipairs(data.data.files) do
+            print("File:", file.filename)
+            print("Status:", file.status)
+            print("Changes: +" .. file.additions .. " -" .. file.deletions)
+            if file.patch then
+                print("Patch:", file.patch)
             end
         end
-    )
+        
+        -- Access overall stats
+        print("Total changes:", data.data.metadata.stats.changes)
+        print("Total additions:", data.data.metadata.stats.additions)
+        print("Total deletions:", data.data.metadata.stats.deletions)
+    end)
 end
+
+-- Example usage
+fetchChanges("1234", "5678", "windows", true)
 ```
 
 </Tab>
 <Tab value="C#">
 
 ```csharp
-// Using HttpClient with pagination and filtering
 using System.Net.Http;
 using System.Text.Json;
 
-public class ArtifactService
+public class ChangelogClient
 {
-    private readonly HttpClient _httpClient;
+    private readonly HttpClient _client;
     
-    public ArtifactService()
+    public ChangelogClient()
     {
-        _httpClient = new HttpClient();
-        _httpClient.BaseAddress = new Uri("https://fixfx.wiki/api/");
+        _client = new HttpClient();
     }
     
-    public async Task<ArtifactData> GetArtifacts(int page = 1, int limit = 10)
+    public async Task<ChangelogData> GetChanges(string from, string to, string platform = null, bool includeDiffs = false)
     {
-        try
+        var url = $"https://fixfx.wiki/api/artifacts/changes?from={from}&to={to}";
+        if (!string.IsNullOrEmpty(platform))
         {
-            var offset = (page - 1) * limit;
-            var response = await _httpClient.GetAsync(
-                $"artifacts?platform=windows&limit={limit}&offset={offset}"
-            );
-            response.EnsureSuccessStatusCode();
-            
-            var content = await response.Content.ReadAsStringAsync();
-            var data = JsonSerializer.Deserialize<ApiResponse>(content);
-            
-            Console.WriteLine($"Page {data.Metadata.Pagination.CurrentPage} of {data.Metadata.Pagination.TotalPages}");
-            return data.Data;
+            url += $"&platform={platform}";
         }
-        catch (Exception ex)
+        if (includeDiffs)
         {
-            Console.WriteLine($"Error: {ex.Message}");
-            return null;
+            url += "&includeDiffs=true";
         }
-    }
-}
-
-// Using RestSharp with advanced filtering
-using RestSharp;
-
-public class ArtifactClient
-{
-    private readonly RestClient _client;
-    
-    public ArtifactClient()
-    {
-        _client = new RestClient("https://fixfx.wiki/api/");
-    }
-    
-    public ArtifactData SearchArtifacts(string version, string platform)
-    {
-        var request = new RestRequest("artifacts");
-        request.AddQueryParameter("version", version);
-        request.AddQueryParameter("platform", platform);
-        request.AddQueryParameter("includeEol", "true");
         
-        var response = _client.Get<ApiResponse>(request);
-        return response.Data;
+        var response = await _client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        
+        var content = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<ChangelogData>(content);
     }
 }
+
+// Example usage
+var client = new ChangelogClient();
+var changes = await client.GetChanges("1234", "5678", "windows", true);
+
+foreach (var commit in changes.Data.Commits)
+{
+    Console.WriteLine($"Commit: {commit.Message}");
+    Console.WriteLine($"Author: {commit.Author.Name}");
+    Console.WriteLine($"Date: {commit.Date}");
+    Console.WriteLine($"Stats: +{commit.Stats.Additions} -{commit.Stats.Deletions}");
+}
+
+foreach (var file in changes.Data.Files)
+{
+    Console.WriteLine($"File: {file.Filename}");
+    Console.WriteLine($"Status: {file.Status}");
+    Console.WriteLine($"Changes: +{file.Additions} -{file.Deletions}");
+    if (!string.IsNullOrEmpty(file.Patch))
+    {
+        Console.WriteLine($"Patch: {file.Patch}");
+    }
+}
+
+Console.WriteLine($"Total changes: {changes.Data.Metadata.Stats.Changes}");
+Console.WriteLine($"Total additions: {changes.Data.Metadata.Stats.Additions}");
+Console.WriteLine($"Total deletions: {changes.Data.Metadata.Stats.Deletions}");
+```
+
+</Tab>
+</Tabs>
+
+### GET /api/artifacts/check
+
+Retrieves GitHub issues related to specific artifact versions, helping you track reported problems and their status.
+
+#### Query Parameters
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `version` | string | Filter issues by specific artifact version | All versions |
+| `state` | string | Filter by issue state (`open` or `closed`) | All states |
+| `page` | number | Page number for pagination | 1 |
+| `perPage` | number | Number of results per page | 20 |
+
+#### Response Format
+
+```json
+{
+  "data": [
+    {
+      "number": number,
+      "title": "string",
+      "state": "string",
+      "artifact_version": "string",
+      "created_at": "string",
+      "updated_at": "string",
+      "url": "string",
+      "report_count": number
+    }
+  ],
+  "metadata": {
+    "total": number,
+    "totalPages": number,
+    "currentPage": number,
+    "perPage": number,
+    "versions": ["string"],
+    "states": {
+      "open": number,
+      "closed": number
+    }
+  }
+}
+```
+
+#### Example Usage
+
+<Tabs items={['JavaScript', 'Lua', 'C#']}>
+<Tab value="JavaScript">
+
+```javascript
+// Check issues for a specific version
+const response = await fetch(
+  'https://fixfx.wiki/api/artifacts/check?version=1234&state=open'
+);
+const data = await response.json();
+
+// Process issues
+data.data.forEach(issue => {
+  console.log(`Issue #${issue.number}: ${issue.title}`);
+  console.log(`State: ${issue.state}`);
+  console.log(`Version: ${issue.artifact_version}`);
+  console.log(`Report Count: ${issue.report_count}`);
+  console.log(`URL: ${issue.url}`);
+});
+
+// Access metadata
+console.log(`Total Issues: ${data.metadata.total}`);
+console.log(`Open Issues: ${data.metadata.states.open}`);
+console.log(`Closed Issues: ${data.metadata.states.closed}`);
+```
+
+</Tab>
+<Tab value="Lua">
+
+```lua
+-- Check issues for a specific version
+local function checkIssues(version, state)
+    local url = string.format(
+        "https://fixfx.wiki/api/artifacts/check?version=%s&state=%s",
+        version, state
+    )
+    
+    local response = PerformHttpRequest(url, function(error, resultData, resultCode)
+        if error ~= 200 then
+            print("Error checking issues:", error)
+            return
+        end
+        
+        local data = json.decode(resultData)
+        
+        -- Process issues
+        for _, issue in ipairs(data.data) do
+            print("Issue #" .. issue.number .. ":", issue.title)
+            print("State:", issue.state)
+            print("Version:", issue.artifact_version)
+            print("Report Count:", issue.report_count)
+            print("URL:", issue.url)
+        end
+        
+        -- Access metadata
+        print("Total Issues:", data.metadata.total)
+        print("Open Issues:", data.metadata.states.open)
+        print("Closed Issues:", data.metadata.states.closed)
+    end)
+end
+
+-- Example usage
+checkIssues("1234", "open")
+```
+
+</Tab>
+<Tab value="C#">
+
+```csharp
+using System.Net.Http;
+using System.Text.Json;
+
+public class IssueChecker
+{
+    private readonly HttpClient _client;
+    
+    public IssueChecker()
+    {
+        _client = new HttpClient();
+    }
+    
+    public async Task<IssueData> CheckIssues(string version, string state = null)
+    {
+        var url = $"https://fixfx.wiki/api/artifacts/check?version={version}";
+        if (!string.IsNullOrEmpty(state))
+        {
+            url += $"&state={state}";
+        }
+        
+        var response = await _client.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        
+        var content = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<IssueData>(content);
+    }
+}
+
+// Example usage
+var checker = new IssueChecker();
+var issues = await checker.CheckIssues("1234", "open");
+
+foreach (var issue in issues.Data)
+{
+    Console.WriteLine($"Issue #{issue.Number}: {issue.Title}");
+    Console.WriteLine($"State: {issue.State}");
+    Console.WriteLine($"Version: {issue.ArtifactVersion}");
+    Console.WriteLine($"Report Count: {issue.ReportCount}");
+    Console.WriteLine($"URL: {issue.Url}");
+}
+
+Console.WriteLine($"Total Issues: {issues.Metadata.Total}");
+Console.WriteLine($"Open Issues: {issues.Metadata.States.Open}");
+Console.WriteLine($"Closed Issues: {issues.Metadata.States.Closed}");
 ```
 
 </Tab>

@@ -125,7 +125,7 @@ export function MobileChatDrawer({
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent side="left" className="w-full max-w-full sm:max-w-md border-r border-[#5865F2]/20 p-0 bg-fd-background">
+            <SheetContent side="left" className="w-full max-w-full sm:max-w-md border-r border-[#5865F2]/20 p-0 bg-fd-background pt-16">
                 <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between p-4 border-b border-[#5865F2]/20">
                         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>

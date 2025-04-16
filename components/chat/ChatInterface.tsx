@@ -116,9 +116,11 @@ export function ChatInterface({ model, temperature, initialMessages, fullHeight 
             console.log("[ChatInterface] New chat created with ID:", chatId);
         }
 
-        const title = firstUserMessage.content.length > 50
-            ? firstUserMessage.content.substring(0, 50) + '...'
-            : firstUserMessage.content;
+        const title = firstUserMessage.content
+            .split(/[.!?]/)[0] // Take the first sentence or phrase
+            .trim() // Remove extra spaces
+            .slice(0, 30) // Limit to 30 characters
+            .concat(firstUserMessage.content.length > 30 ? "..." : ""); // Add ellipsis if truncated
 
         // Ensure all messages have timestamps
         const messagesWithTimestamps = messages.map(msg => ({
@@ -275,7 +277,6 @@ export function ChatInterface({ model, temperature, initialMessages, fullHeight 
     const renderMessageContent = (content: string) => {
         return (
             <ReactMarkdown
-                className="prose prose-invert max-w-none"
                 remarkPlugins={[remarkGfm, remarkBreaks]}
                 components={{
                     code({ node, inline, className, children, ...props }) {
@@ -400,14 +401,6 @@ export function ChatInterface({ model, temperature, initialMessages, fullHeight 
                                 </p>
                             </div>
                         </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setShowNotice(false)}
-                            className="h-6 w-6"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
                     </div>
                 </div>
             )}
@@ -424,7 +417,7 @@ export function ChatInterface({ model, temperature, initialMessages, fullHeight 
                                 className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
                             >
                                 <div
-                                    className={`rounded-lg px-4 py-2 max-w-[80%] ${message.role === 'user'
+                                    className={`rounded-lg px-4 py-2 max-w-[90vw] sm:max-w-[75%] break-words overflow-hidden ${message.role === 'user'
                                         ? 'bg-[#5865F2] text-white'
                                         : 'bg-[#2B2D31] text-white'
                                         }`}
