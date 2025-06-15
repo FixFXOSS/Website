@@ -187,6 +187,10 @@ async function fetchChangelog(fromVersion: string, toVersion: string): Promise<C
     }
 }
 
+// Route segment configuration
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -461,4 +465,4 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
-} 
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Button } from '@ui/components/button';
 import { ScrollArea } from '@ui/components/scroll-area';
 import { useFetch } from '@core/useFetch';
@@ -46,32 +46,35 @@ export function NativesContent({ game, environment, category, searchQuery, inclu
     const [expandedNative, setExpandedNative] = useState<string | null>(null);
     const [copiedHash, setCopiedHash] = useState<string | null>(null);
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
-    const limit = 20;
-    const offset = (page - 1) * limit;
 
-    const apiUrl = `/api/natives?game=${game}&limit=${limit}&offset=${offset}${environment !== 'all' ? `&environment=${environment}` : ''}${category ? `&ns=${category}` : ''}${searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''}&cfx=${includeCFX}`;
-
-    const filtersRef = useRef({ game, environment, category, searchQuery, page, includeCFX });
-    const [forceRefreshKey, setForceRefreshKey] = useState(0);
+    // Track filter changes to reset pagination
+    const prevFilters = useRef({ game, environment, category, searchQuery, includeCFX });
 
     useEffect(() => {
-        const currentFilters = { game, environment, category, searchQuery, page, includeCFX };
-        if (JSON.stringify(filtersRef.current) !== JSON.stringify(currentFilters)) {
-            filtersRef.current = currentFilters;
-            setForceRefreshKey(prev => prev + 1);
-
-            if (page !== 1 &&
-                (filtersRef.current.game !== currentFilters.game ||
-                    filtersRef.current.environment !== currentFilters.environment ||
-                    filtersRef.current.category !== currentFilters.category ||
-                    filtersRef.current.searchQuery !== currentFilters.searchQuery ||
-                    filtersRef.current.includeCFX !== currentFilters.includeCFX)
-            ) {
-                setPage(1);
-            }
+        const currentFilters = { game, environment, category, searchQuery, includeCFX };
+        if (JSON.stringify(prevFilters.current) !== JSON.stringify(currentFilters)) {
+            setPage(1); // Reset to first page when filters change
+            prevFilters.current = currentFilters;
         }
-    }, [game, environment, category, searchQuery, page, includeCFX]);
+    }, [game, environment, category, searchQuery, includeCFX]);
 
+    // Construct API URL with all parameters
+    const apiUrl = useMemo(() => {
+        const params = new URLSearchParams({
+            game,
+            limit: '20',
+            offset: ((page - 1) * 20).toString(),
+            cfx: includeCFX.toString()
+        });
+
+        if (environment !== 'all') params.set('environment', environment);
+        if (category) params.set('ns', category);
+        if (searchQuery) params.set('search', searchQuery);
+
+        return `/api/natives?${params.toString()}`;
+    }, [game, environment, category, searchQuery, includeCFX, page]);
+
+    // Use the enhanced fetch hook
     const { data, isPending, error } = useFetch<{
         data: Native[],
         metadata: {
@@ -86,12 +89,12 @@ export function NativesContent({ game, environment, category, searchQuery, inclu
                 total: number
             }
         }
-    }>(apiUrl, {}, [forceRefreshKey]);
+    }>(apiUrl);
 
     const natives = data?.data || [];
     const metadata = data?.metadata;
     const totalResults = metadata?.total || 0;
-    const totalPages = Math.ceil((metadata?.total || 0) / limit);
+    const totalPages = Math.ceil((metadata?.total || 0) / 20);
     const totalEnvironmentStats = metadata?.environmentStats;
 
     const handleCopyHash = (hash: string) => {
@@ -415,21 +418,12 @@ export function NativesContent({ game, environment, category, searchQuery, inclu
                                 <div className="flex items-center gap-1">
                                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                         let pageNum;
-
                                         if (totalPages <= 5) {
                                             pageNum = i + 1;
                                         } else if (page <= 3) {
-                                            if (i < 4) {
-                                                pageNum = i + 1;
-                                            } else {
-                                                pageNum = totalPages;
-                                            }
+                                            pageNum = i + 1;
                                         } else if (page >= totalPages - 2) {
-                                            if (i === 0) {
-                                                pageNum = 1;
-                                            } else {
-                                                pageNum = totalPages - 4 + i;
-                                            }
+                                            pageNum = totalPages - 4 + i;
                                         } else {
                                             if (i === 0) {
                                                 pageNum = 1;
@@ -440,10 +434,9 @@ export function NativesContent({ game, environment, category, searchQuery, inclu
                                             }
                                         }
 
-                                        if (
-                                            (pageNum > 2 && (pageNum - 1 !== 1 && pageNum - 1 !== page - 1 && pageNum - 1 !== totalPages - 1)) ||
-                                            (pageNum < totalPages - 1 && (pageNum + 1 !== page + 1 && pageNum + 1 !== totalPages && pageNum + 1 !== 2))
-                                        ) {
+                                        // Check if we need ellipsis
+                                        if ((pageNum > 2 && pageNum - 1 !== 1 && pageNum - 1 !== page - 1 && pageNum - 1 !== totalPages - 1) ||
+                                            (pageNum < totalPages - 1 && pageNum + 1 !== page + 1 && pageNum + 1 !== totalPages && pageNum + 1 !== 2)) {
                                             return (
                                                 <span key={`ellipsis-${i}`} className="w-8 text-center">...</span>
                                             );

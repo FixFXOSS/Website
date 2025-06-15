@@ -1,20 +1,34 @@
 "use client";
 
+import * as React from "react";
 import { useCallback, useEffect, useState, useRef } from "react";
-import { ScrollArea } from "@ui/components/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/components/tabs";
-import { Badge } from "@ui/components/badge";
-import { Button } from "@ui/components/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@ui/components/card";
-import { Alert, AlertDescription, AlertTitle } from "@ui/components/alert";
-import { AlertCircle, ChevronDown, ChevronRight, ChevronUp, ChevronLeft, Copy, Download, ExternalLink, Filter, Search, Server, ServerCrash, X } from "lucide-react";
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@ui/components/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@ui/components/dropdown-menu";
-import { Progress } from "@ui/components/progress";
-import { Input } from "@ui/components/input";
-import { Separator } from "@ui/components/separator";
+import { ScrollArea } from "@/packages/ui/src/components/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/packages/ui/src/components/tabs";
+import { Badge } from "@/packages/ui/src/components/badge";
+import { Button } from "@/packages/ui/src/components/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/packages/ui/src/components/card";
+import { Alert, AlertDescription, AlertTitle } from "@/packages/ui/src/components/alert";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/packages/ui/src/components/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/packages/ui/src/components/dropdown-menu";
+import { Progress } from "@/packages/ui/src/components/progress";
+import { Input } from "@/packages/ui/src/components/input";
+import { Separator } from "@/packages/ui/src/components/separator";
+import { Sheet, SheetContent, SheetClose, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/packages/ui/src/components/sheet";
+import { cn } from "@/packages/utils/src/functions/cn";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "@utils/functions/cn";
+import { 
+  Search, 
+  Server, 
+  ServerCrash, 
+  Filter, 
+  X, 
+  AlertCircle, 
+  Copy, 
+  Download, 
+  ExternalLink, 
+  ChevronLeft, 
+  ChevronRight 
+} from "lucide-react";
 
 // Types
 interface Artifact {

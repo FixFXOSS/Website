@@ -328,6 +328,10 @@ async function fetchIssuesWithArtifacts(): Promise<ArtifactIssue[]> {
     }
 }
 
+// Route segment configuration
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
         // Check if GitHub token is configured

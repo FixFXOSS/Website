@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@utils/functions/cn"
-import { NAV_LINKS, DISCORD_LINK, GITHUB_LINK } from "@utils/constants/link"
+import { NAV_LINKS, DISCORD_LINK, GITHUB_LINK } from "@utils/constants"
 import { Button } from "./button"
 import { ScrollArea } from "./scroll-area"
 import { Home, MessageSquare, Settings, History, ChevronLeft, ChevronRight, Code, ChevronUp, ChevronDown, Plus, Zap, Bot, Github, MessagesSquare } from "lucide-react"

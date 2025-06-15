@@ -1,7 +1,7 @@
 "use client"
 
 import { ChatSidebar } from '@ui/components/chat-sidebar';
-import { ChatInterface, SavedChat } from '@/components/chat/ChatInterface';
+import { ChatInterface, SavedChat } from '@ui/core/chat/ChatInterface';
 import { MobileChatHeader } from '@ui/components/mobile-chat-header';
 import { MobileChatDrawer } from '@ui/components/mobile-chat-drawer';
 import { useState, useEffect } from 'react';

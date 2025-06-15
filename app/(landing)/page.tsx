@@ -1,8 +1,8 @@
-import { Tracer } from "@/components/landing/tracer";
-import { Features } from "@/components/landing/features";
-import { DocsPreview } from "@/components/landing/docs-preview";
-import { Hero } from "@/components/layout/hero";
-import { Contributors } from "@/components/landing/contributors";
+import { Tracer } from "@ui/core/landing/tracer";
+import { Features } from "@ui/core/landing/features";
+import { DocsPreview } from "@ui/core/landing/docs-preview";
+import { Hero } from "@ui/core/layout/hero";
+import { Contributors } from "@ui/core/landing/contributors";
 
 export default function HomePage() {
   return (

@@ -258,25 +258,18 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
 
-    // Extract query parameters with improved handling
-    const name = searchParams.get('name')?.toUpperCase();
-    const ns = searchParams.get('ns')?.toUpperCase();
+    // Extract and validate query parameters
     const game = (searchParams.get('game') || 'gta5') as 'gta5' | 'rdr3';
     const environment = searchParams.get('environment')?.toLowerCase() as 'client' | 'server' | 'shared' | 'all' | null;
-    const category = searchParams.get('category')?.toUpperCase();
+    const ns = searchParams.get('ns')?.toUpperCase();
     const search = searchParams.get('search')?.toLowerCase();
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200);
     const offset = parseInt(searchParams.get('offset') || '0');
-    const includeCfx = searchParams.get('cfx') !== 'false'; // Default to include CFX natives
-    const hash = searchParams.get('hash')?.toLowerCase(); // For direct hash lookup
+    const includeCfx = searchParams.get('cfx') !== 'false';
 
-    // Determine which sources to fetch based on game and CFX inclusion
+    // Determine which sources to fetch
     const sources: Array<'gta5' | 'rdr3' | 'cfx'> = [game];
-
-    // Add CFX natives if requested
-    if (includeCfx) {
-      sources.push('cfx');
-    }
+    if (includeCfx) sources.push('cfx');
 
     // For full API documentation, if requested (used for metadata only)
     if (searchParams.has('full')) {
@@ -308,79 +301,41 @@ export async function GET(request: NextRequest) {
     // Extract unique namespaces and organize by game and environment
     const { namespacesByGameAndEnv, hasCfxNamespace } = organizeNamespacesByGameAndEnvironment(allNatives);
 
-    // Filter natives based on criteria with improved filtering
-    let filteredNatives = allNatives;
+    // Optimized filtering logic
+    let filteredNatives = allNatives.filter(native => {
+      // Game filter
+      if (native.game !== game && !native.isCfx) return false;
 
-    // Direct hash lookup if provided - super efficient
-    if (hash) {
-      filteredNatives = filteredNatives.filter(native =>
-        native.hash.toLowerCase() === hash.toLowerCase()
-      );
-    } else {
-      // Filter by game
-      filteredNatives = filteredNatives.filter(native => native.game === game);
-
-      // Filter by namespace if specified
-      if (ns) {
-        filteredNatives = filteredNatives.filter(native => native.ns === ns);
-      }
-
-      // Filter by environment if specified
+      // Environment filter
       if (environment && environment !== 'all') {
-        filteredNatives = filteredNatives.filter(native =>
-          native.environment === environment || native.environment === 'shared'
-        );
+        if (native.environment !== environment && native.environment !== 'shared') {
+          return false;
+        }
       }
 
-      // Filter by name if specified
-      if (name) {
-        filteredNatives = filteredNatives.filter(native =>
-          native.name.toUpperCase().includes(name)
-        );
-      }
+      // Namespace filter
+      if (ns && native.ns !== ns) return false;
 
-      // Filter by category if specified
-      if (category) {
-        filteredNatives = filteredNatives.filter(native =>
-          native.category === category
-        );
-      }
+      // Search filter - optimized for performance
+      if (search) {
+        const searchTerms = search.split(/\s+/);
+        return searchTerms.every(term => {
+          const matches = [
+            native.name.toLowerCase(),
+            native.description?.toLowerCase(),
+            native.params.some(p =>
+              p.name?.toLowerCase().includes(term) ||
+              p.description?.toLowerCase().includes(term)
+            ),
+            native.resultsDescription?.toLowerCase()
+          ].some(field => field?.includes(term));
 
-      // Improved search - searches in name, description and parameters
-      if (search && search.trim() !== '') {
-        const searchTerms = search.toLowerCase().split(/\s+/);
-
-        filteredNatives = filteredNatives.filter(native => {
-          // Check if all search terms exist in the native
-          return searchTerms.every(term => {
-            // Check name
-            if (native.name.toLowerCase().includes(term)) {
-              return true;
-            }
-
-            // Check description
-            if (native.description?.toLowerCase().includes(term)) {
-              return true;
-            }
-
-            // Check parameters
-            if (native.params.some(param =>
-              param.name?.toLowerCase().includes(term) ||
-              (param.description && param.description.toLowerCase().includes(term))
-            )) {
-              return true;
-            }
-
-            // Check result description
-            if (native.resultsDescription && native.resultsDescription.toLowerCase().includes(term)) {
-              return true;
-            }
-
-            return false;
-          });
+          return matches;
         });
       }
-    }
+
+      return true;
+    });
 
     // Extract unique namespaces for the current game selection
     const namespaces = [...new Set(filteredNatives.map(native => native.ns))].sort();

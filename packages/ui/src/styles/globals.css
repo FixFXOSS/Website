@@ -59,19 +59,3 @@
     --fd-chart-5: 340 75% 55%;
   }
 }
-
-@keyframes indeterminate-progress {
-  0% {
-    transform: translateX(-100%);
-  }
-  50% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.animate-indeterminate-progress {
-  animation: indeterminate-progress 1.5s infinite cubic-bezier(0.65, 0.815, 0.735, 0.395);
-}

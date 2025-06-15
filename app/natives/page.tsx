@@ -1,50 +1,37 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { NativesSidebar } from '@/components/natives/natives-sidebar';
-import { NativesContent } from '@/components/natives/natives-content';
-import { NativesFilterSheet } from '@/components/natives/natives-filter-sheet';
-import { MobileNativesHeader } from '@/components/natives/mobile-natives-header';
+import { NativesSidebar } from '@ui/core/natives/natives-sidebar';
+import { NativesContent } from '@ui/core/natives/natives-content';
+import { NativesFilterSheet } from '@ui/core/natives/natives-filter-sheet';
+import { MobileNativesHeader } from '@ui/core/natives/mobile-natives-header';
 import { Search, X } from 'lucide-react';
 import { Button } from '@ui/components/button';
-import { MobileNavigation } from '@/components/common/mobile-navigation';
+import { MobileNavigation } from '@ui/core/common/mobile-navigation';
 import { useFetch } from '@core/useFetch';
 import { Input } from '@ui/components/input';
 
 export default function NativesPage() {
-  // State for filters with proper defaults
+  // State with proper defaults and type enforcement
   const [game, setGame] = useState<'gta5' | 'rdr3'>('gta5');
   const [environment, setEnvironment] = useState<'all' | 'client' | 'server'>('all');
   const [category, setCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
-  const [categoriesByGameAndEnv, setCategoriesByGameAndEnv] = useState<Record<string, Record<string, string[]>> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInputValue, setSearchInputValue] = useState('');
-  const [includeCFX, setIncludeCFX] = useState(true); // Default to true
-  const [hasCFXNamespace, setHasCFXNamespace] = useState(false);
+  const [includeCFX, setIncludeCFX] = useState(true);
 
-  // Mobile state
+  // Add missing mobile state
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
-
-  // Keep a reference to the last timeouts for debouncing URL updates
   const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch categories on mount (one-time load)
+  // Fetch metadata with proper dependencies
   const { data: metaData, isPending: isMetaDataLoading } = useFetch<{
     metadata: {
       namespaces: string[],
       namespacesByGameAndEnv: Record<string, Record<string, string[]>>,
-      hasCfxNamespace: boolean,
-      namespaceStats: Array<{
-        namespace: string;
-        count: number;
-        client: number;
-        server: number;
-        shared: number;
-        isCfx: boolean;
-      }>
+      hasCfxNamespace: boolean
     }
   }>(
     `/api/natives?game=${game}&limit=1&cfx=${includeCFX}&full=true`,
@@ -52,97 +39,81 @@ export default function NativesPage() {
     [game, includeCFX]
   );
 
-  // Update categories and CFX flag when metadata changes
-  useEffect(() => {
-    if (metaData?.metadata) {
-      // Set both the flat namespaces list and the structured one
-      if (metaData.metadata.namespaces) {
-        console.log("Categories loaded:", metaData.metadata.namespaces.length);
-        setCategories(metaData.metadata.namespaces);
-      }
+  // Extract categories from metadata
+  const categories = metaData?.metadata.namespaces || [];
+  const categoriesByGameAndEnv = metaData?.metadata.namespacesByGameAndEnv;
 
-      if (metaData.metadata.namespacesByGameAndEnv) {
-        console.log("Organized categories loaded by game and environment");
-        setCategoriesByGameAndEnv(metaData.metadata.namespacesByGameAndEnv);
-      }
-
-      // Track if CFX namespace is available
-      if (metaData.metadata.hasCfxNamespace !== undefined) {
-        setHasCFXNamespace(metaData.metadata.hasCfxNamespace);
-      }
-    }
-  }, [metaData]);
-
-  // Reset category when game or environment changes if the category doesn't exist
-  useEffect(() => {
-    if (!categoriesByGameAndEnv) return;
-
-    // Get current game and environment categories
-    const currentGameEnvCategories =
-      categoriesByGameAndEnv[game]?.[environment] || [];
-
-    // If current category is not in the list and is not empty, reset it
-    if (category && !currentGameEnvCategories.includes(category)) {
-      console.log(`Category ${category} not available in ${game}/${environment}, resetting`);
+  // Enhanced handlers with proper state updates
+  const handleGameChange = useCallback((newGame: 'gta5' | 'rdr3') => {
+    console.log(`Changing game from ${game} to ${newGame}`);
+    setGame(newGame);
+    // Reset category if not available in new game
+    if (metaData?.metadata.namespacesByGameAndEnv?.[newGame]?.[environment]?.includes(category) === false) {
       setCategory('');
     }
-  }, [game, environment, category, categoriesByGameAndEnv]);
-
-  // Handlers with improved logging
-  const handleGameChange = useCallback((newGame: 'gta5' | 'rdr3') => {
-    console.log("Changing game from", game, "to", newGame);
-    setGame(newGame);
-  }, [game]);
+  }, [game, environment, category, metaData]);
 
   const handleEnvironmentChange = useCallback((newEnv: 'all' | 'client' | 'server') => {
-    console.log("Changing environment from", environment, "to", newEnv);
+    console.log(`Changing environment from ${environment} to ${newEnv}`);
     setEnvironment(newEnv);
-  }, [environment]);
+    // Reset category if not available in new environment
+    if (metaData?.metadata.namespacesByGameAndEnv?.[game]?.[newEnv]?.includes(category) === false) {
+      setCategory('');
+    }
+  }, [game, environment, category, metaData]);
 
-  const handleCategoryChange = useCallback((newCategory: string) => {
-    console.log("Changing category from", category, "to", newCategory);
-    setCategory(newCategory);
-  }, [category]);
-
-  const handleToggleCFX = useCallback(() => {
-    console.log("Toggling CFX from", includeCFX, "to", !includeCFX);
-    setIncludeCFX(prev => !prev);
-  }, [includeCFX]);
-
-  // Function to handle search submission with proper redirection and debouncing
   const handleSearchSubmit = useCallback((query: string) => {
-    // Update the state immediately for the UI
     setSearchQuery(query);
     setSearchInputValue(query);
 
-    // Debounce updating the URL to avoid excessive history entries
-    if (urlUpdateTimeoutRef.current) {
-      clearTimeout(urlUpdateTimeoutRef.current);
+    // Update URL with search parameters
+    const url = new URL(window.location.href);
+    if (query) {
+      url.searchParams.set('search', query);
+    } else {
+      url.searchParams.delete('search');
     }
+    window.history.replaceState({}, '', url.toString());
+  }, []);
 
-    urlUpdateTimeoutRef.current = setTimeout(() => {
-      // Update the URL to include the search query (only after debounce)
-      const url = new URL(window.location.href);
+  // Parse URL params on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-      // Set search parameter or remove it if empty
-      if (query) {
-        url.searchParams.set('search', query);
-      } else {
-        url.searchParams.delete('search');
-      }
+    const params = new URLSearchParams(window.location.search);
+    const gameParam = params.get('game');
+    const envParam = params.get('env');
+    const categoryParam = params.get('category');
+    const searchParam = params.get('search');
+    const cfxParam = params.get('cfx');
 
-      // Preserve other parameters
-      if (game !== 'gta5') url.searchParams.set('game', game);
-      if (environment !== 'all') url.searchParams.set('env', environment);
-      if (category) url.searchParams.set('category', category);
-      if (!includeCFX) url.searchParams.set('cfx', 'false');
+    if (gameParam === 'gta5' || gameParam === 'rdr3') setGame(gameParam);
+    if (envParam === 'all' || envParam === 'client' || envParam === 'server') setEnvironment(envParam);
+    if (categoryParam) setCategory(categoryParam);
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      setSearchInputValue(searchParam);
+    }
+    if (cfxParam === 'false') setIncludeCFX(false);
+  }, []);
 
-      // Update browser URL without reloading
-      window.history.replaceState({}, '', url.toString());
+  // Sync URL with state changes
+  useEffect(() => {
+    const url = new URL(window.location.href);
 
-      console.log(`Search query updated in URL: "${query}"`);
-    }, 800); // 800ms debounce for URL updates (longer than input debounce)
+    if (game !== 'gta5') url.searchParams.set('game', game);
+    else url.searchParams.delete('game');
 
+    if (environment !== 'all') url.searchParams.set('env', environment);
+    else url.searchParams.delete('env');
+
+    if (category) url.searchParams.set('category', category);
+    else url.searchParams.delete('category');
+
+    if (!includeCFX) url.searchParams.set('cfx', 'false');
+    else url.searchParams.delete('cfx');
+
+    window.history.replaceState({}, '', url.toString());
   }, [game, environment, category, includeCFX]);
 
   // Clean up any pending timeouts when component unmounts
@@ -164,39 +135,15 @@ export default function NativesPage() {
     setIncludeCFX(true);
   };
 
-  // Parse URL search params on initial load
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-
-      // Set initial state from URL if present
-      const gameParam = params.get('game');
-      if (gameParam === 'gta5' || gameParam === 'rdr3') {
-        setGame(gameParam);
-      }
-
-      const envParam = params.get('env');
-      if (envParam === 'all' || envParam === 'client' || envParam === 'server') {
-        setEnvironment(envParam);
-      }
-
-      const categoryParam = params.get('category');
-      if (categoryParam) {
-        setCategory(categoryParam);
-      }
-
-      const searchParam = params.get('search');
-      if (searchParam) {
-        setSearchQuery(searchParam);
-        setSearchInputValue(searchParam);
-      }
-
-      const cfxParam = params.get('cfx');
-      if (cfxParam === 'false') {
-        setIncludeCFX(false);
-      }
-    }
+  // Add missing category handler
+  const handleCategoryChange = useCallback((newCategory: string) => {
+    setCategory(newCategory);
   }, []);
+
+  // Add missing CFX toggle handler
+  const handleToggleCFX = useCallback(() => {
+    setIncludeCFX(!includeCFX);
+  }, [includeCFX]);
 
   return (
     <div className="relative flex min-h-screen h-screen bg-background overflow-hidden">

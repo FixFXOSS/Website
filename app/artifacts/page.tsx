@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ArtifactsSidebar } from '@/components/artifacts/artifacts-sidebar';
-import { ArtifactsContent } from '@/components/artifacts/artifacts-content';
-import { MobileArtifactsHeader } from '@/components/artifacts/mobile-artifacts-header';
-import { ArtifactsDrawer } from '@/components/artifacts/artifacts-drawer';
+import { useState, useEffect, Suspense } from 'react';
+import { ArtifactsSidebar } from '@ui/core/artifacts/artifacts-sidebar';
+import { ArtifactsContent } from '@ui/core/artifacts/artifacts-content';
+import { MobileArtifactsHeader } from '@ui/core/artifacts/mobile-artifacts-header';
+import { ArtifactsDrawer } from '@ui/core/artifacts/artifacts-drawer';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Card } from '@ui/components/card';
+import { Progress } from '@ui/components/progress';
 
 type SupportStatus = "recommended" | "latest" | "active" | "deprecated" | "eol" | undefined;
 
-export default function ArtifactsPage() {
-  // Get query params for initial state
+// Create a wrapper component for handling search params
+function ArtifactsPageContent() {
   const searchParams = useSearchParams();
   const initialPlatform = (searchParams.get('platform') as 'windows' | 'linux') || 'windows';
   const initialSearch = searchParams.get('search') || '';
@@ -94,16 +96,46 @@ export default function ArtifactsPage() {
         />
 
         <main className="flex-1 h-full w-full mt-16">
-          <ArtifactsContent
-            platform={platform}
-            searchQuery={searchQuery}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            status={status}
-            includeEol={includeEol}
-          />
+          <Suspense
+            fallback={
+              <Card className="p-8">
+                <Progress value={undefined} className="w-full" />
+                <p className="text-center mt-4 text-muted-foreground">Loading artifacts...</p>
+              </Card>
+            }
+          >
+            <ArtifactsContent
+              platform={platform}
+              searchQuery={searchQuery}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              status={status}
+              includeEol={includeEol}
+            />
+          </Suspense>
         </main>
       </div>
     </div>
   );
 }
+
+// Export the main page component with Suspense
+export default function ArtifactsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="p-8 w-full max-w-md mx-4">
+            <Progress value={undefined} className="w-full" />
+            <p className="text-center mt-4 text-muted-foreground">Loading artifacts page...</p>
+          </Card>
+        </div>
+      }
+    >
+      <ArtifactsPageContent />
+    </Suspense>
+  );
+}
+
+// Mark as dynamic
+export const dynamic = 'force-dynamic';
